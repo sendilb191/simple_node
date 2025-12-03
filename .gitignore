@@ -13,9 +13,10 @@ package-lock.json
 .env.production.local
 
 # Database
-*.db
-*.sqlite
-*.sqlite3
+# SQLite databases (comment out if you want to include in repo)
+# *.db
+# *.sqlite
+# *.sqlite3
 
 # Logs
 logs

@@ -1,5 +1,5 @@
 const express = require("express");
-const fs = require("fs");
+const { Pool } = require("pg");
 const path = require("path");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -13,89 +13,87 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// In-memory database simulation with file persistence
-const dbPath = path.join(__dirname, "users.json");
-let users = [];
-let nextId = 1;
-
-// Load users from file if it exists
-function loadUsers() {
-  try {
-    if (fs.existsSync(dbPath)) {
-      const data = fs.readFileSync(dbPath, "utf8");
-      const parsed = JSON.parse(data);
-      users = parsed.users || [];
-      nextId = parsed.nextId || 1;
-      console.log(`Loaded ${users.length} users from database`);
-
-      // If database exists but is empty, add sample users
-      if (users.length === 0) {
-        createSampleUsers();
-      }
-    } else {
-      // Database doesn't exist, create sample data
-      createSampleUsers();
-    }
-  } catch (error) {
-    console.error("Error loading users:", error);
-    users = [];
-    nextId = 1;
-    createSampleUsers();
-  }
-}
-
-// Create sample users
-function createSampleUsers() {
-  users = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      age: 30,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      age: 25,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      age: 35,
-      created_at: new Date().toISOString(),
-    },
-  ];
-  nextId = 4;
-  saveUsers();
-  console.log("Created sample users");
-}
-
-// Save users to file
-function saveUsers() {
-  try {
-    const data = { users, nextId };
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-  } catch (error) {
-    console.error("Error saving users:", error);
-  }
-}
+// PostgreSQL database setup
+const pool = new Pool({
+  connectionString:
+    process.env.DATABASE_URL || "postgresql://localhost:5432/users_db",
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+});
 
 // Initialize database
-loadUsers();
+async function initializeDatabase() {
+  try {
+    // Create users table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        age INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-// Helper function to find user by ID
-function findUserById(id) {
-  return users.find((user) => user.id === parseInt(id));
+    // Check if table is empty and insert sample data
+    const result = await pool.query("SELECT COUNT(*) FROM users");
+    const count = parseInt(result.rows[0].count);
+
+    if (count === 0) {
+      const sampleUsers = [
+        ["John Doe", "john@example.com", 30],
+        ["Jane Smith", "jane@example.com", 25],
+        ["Mike Johnson", "mike@example.com", 35],
+      ];
+
+      for (const user of sampleUsers) {
+        await pool.query(
+          "INSERT INTO users (name, email, age) VALUES ($1, $2, $3)",
+          user
+        );
+      }
+      console.log("Sample users inserted into PostgreSQL database");
+    } else {
+      console.log(`Loaded ${count} users from PostgreSQL database`);
+    }
+
+    console.log("PostgreSQL database initialized successfully");
+  } catch (error) {
+    console.error("Database initialization error:", error);
+    // Fallback to in-memory storage if database connection fails
+    console.log("Falling back to in-memory storage for development");
+    global.fallbackMode = true;
+    global.users = [
+      {
+        id: 1,
+        name: "John Doe",
+        email: "john@example.com",
+        age: 30,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 2,
+        name: "Jane Smith",
+        email: "jane@example.com",
+        age: 25,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 3,
+        name: "Mike Johnson",
+        email: "mike@example.com",
+        age: 35,
+        created_at: new Date().toISOString(),
+      },
+    ];
+    global.nextId = 4;
+  }
 }
 
-// Helper function to find user by email
-function findUserByEmail(email) {
-  return users.find((user) => user.email.toLowerCase() === email.toLowerCase());
-}
+// Initialize database on startup
+initializeDatabase();
 
 // Helper function to validate email
 function isValidEmail(email) {
@@ -113,13 +111,25 @@ app.get("/", (req, res) => {
 // API Routes
 
 // Get all users
-app.get("/api/users", (req, res) => {
+app.get("/api/users", async (req, res) => {
   try {
-    // Sort by created_at descending
-    const sortedUsers = [...users].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    if (global.fallbackMode) {
+      // Fallback to in-memory storage
+      const sortedUsers = [...global.users].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+      res.json({
+        success: true,
+        users: sortedUsers,
+        count: sortedUsers.length,
+      });
+      return;
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM users ORDER BY created_at DESC"
     );
-    res.json({ success: true, users: sortedUsers, count: sortedUsers.length });
+    res.json({ success: true, users: result.rows, count: result.rows.length });
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ error: "Failed to fetch users" });
@@ -127,16 +137,31 @@ app.get("/api/users", (req, res) => {
 });
 
 // Get user by ID
-app.get("/api/users/:id", (req, res) => {
+app.get("/api/users/:id", async (req, res) => {
   try {
-    const user = findUserById(req.params.id);
+    const userId = req.params.id;
 
-    if (!user) {
+    if (global.fallbackMode) {
+      // Fallback to in-memory storage
+      const user = global.users.find((u) => u.id === parseInt(userId));
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      res.json({ success: true, user });
+      return;
+    }
+
+    const result = await pool.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    if (result.rows.length === 0) {
       res.status(404).json({ error: "User not found" });
       return;
     }
 
-    res.json({ success: true, user: user });
+    res.json({ success: true, user: result.rows[0] });
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ error: "Failed to fetch user" });
@@ -144,7 +169,7 @@ app.get("/api/users/:id", (req, res) => {
 });
 
 // Create new user
-app.post("/api/users", (req, res) => {
+app.post("/api/users", async (req, res) => {
   const { name, email, age } = req.body;
 
   // Validation
@@ -158,37 +183,60 @@ app.post("/api/users", (req, res) => {
     return;
   }
 
-  // Check if email already exists
-  if (findUserByEmail(email)) {
-    res.status(400).json({ error: "Email already exists" });
-    return;
-  }
-
   try {
-    const newUser = {
-      id: nextId++,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      age: age ? parseInt(age) : null,
-      created_at: new Date().toISOString(),
-    };
+    if (global.fallbackMode) {
+      // Fallback to in-memory storage
+      const existingUser = global.users.find(
+        (u) => u.email.toLowerCase() === email.toLowerCase()
+      );
+      if (existingUser) {
+        res.status(400).json({ error: "Email already exists" });
+        return;
+      }
 
-    users.push(newUser);
-    saveUsers();
+      const newUser = {
+        id: global.nextId++,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        age: age ? parseInt(age) : null,
+        created_at: new Date().toISOString(),
+      };
+
+      global.users.push(newUser);
+      res
+        .status(201)
+        .json({
+          success: true,
+          message: "User created successfully",
+          user: newUser,
+        });
+      return;
+    }
+
+    const result = await pool.query(
+      "INSERT INTO users (name, email, age) VALUES ($1, $2, $3) RETURNING *",
+      [name.trim(), email.trim().toLowerCase(), age || null]
+    );
 
     res.status(201).json({
       success: true,
       message: "User created successfully",
-      user: newUser,
+      user: result.rows[0],
     });
   } catch (error) {
     console.error("Error creating user:", error);
-    res.status(500).json({ error: "Failed to create user" });
+    if (error.code === "23505") {
+      // PostgreSQL unique constraint violation
+      res.status(400).json({ error: "Email already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to create user" });
+    }
   }
 });
 
 // Update user
-app.put("/api/users/:id", (req, res) => {
+app.put("/api/users/:id", async (req, res) => {
+  const userId = req.params.id;
   const { name, email, age } = req.body;
 
   // Validation
@@ -203,57 +251,96 @@ app.put("/api/users/:id", (req, res) => {
   }
 
   try {
-    const userIndex = users.findIndex(
-      (user) => user.id === parseInt(req.params.id)
+    if (global.fallbackMode) {
+      // Fallback to in-memory storage
+      const userIndex = global.users.findIndex(
+        (u) => u.id === parseInt(userId)
+      );
+      if (userIndex === -1) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      const existingUser = global.users.find(
+        (u) =>
+          u.email.toLowerCase() === email.toLowerCase() &&
+          u.id !== parseInt(userId)
+      );
+      if (existingUser) {
+        res.status(400).json({ error: "Email already exists" });
+        return;
+      }
+
+      global.users[userIndex] = {
+        ...global.users[userIndex],
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        age: age ? parseInt(age) : null,
+      };
+
+      res.json({
+        success: true,
+        message: "User updated successfully",
+        user: global.users[userIndex],
+      });
+      return;
+    }
+
+    const result = await pool.query(
+      "UPDATE users SET name = $1, email = $2, age = $3 WHERE id = $4 RETURNING *",
+      [name.trim(), email.trim().toLowerCase(), age || null, userId]
     );
 
-    if (userIndex === -1) {
+    if (result.rows.length === 0) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-
-    // Check if email already exists (excluding current user)
-    const existingUser = findUserByEmail(email);
-    if (existingUser && existingUser.id !== parseInt(req.params.id)) {
-      res.status(400).json({ error: "Email already exists" });
-      return;
-    }
-
-    // Update user
-    users[userIndex] = {
-      ...users[userIndex],
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      age: age ? parseInt(age) : null,
-    };
-
-    saveUsers();
 
     res.json({
       success: true,
       message: "User updated successfully",
-      user: users[userIndex],
+      user: result.rows[0],
     });
   } catch (error) {
     console.error("Error updating user:", error);
-    res.status(500).json({ error: "Failed to update user" });
+    if (error.code === "23505") {
+      // PostgreSQL unique constraint violation
+      res.status(400).json({ error: "Email already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to update user" });
+    }
   }
 });
 
 // Delete user
-app.delete("/api/users/:id", (req, res) => {
+app.delete("/api/users/:id", async (req, res) => {
   try {
-    const userIndex = users.findIndex(
-      (user) => user.id === parseInt(req.params.id)
-    );
+    const userId = req.params.id;
 
-    if (userIndex === -1) {
-      res.status(404).json({ error: "User not found" });
+    if (global.fallbackMode) {
+      // Fallback to in-memory storage
+      const userIndex = global.users.findIndex(
+        (u) => u.id === parseInt(userId)
+      );
+      if (userIndex === -1) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      global.users.splice(userIndex, 1);
+      res.json({ success: true, message: "User deleted successfully" });
       return;
     }
 
-    users.splice(userIndex, 1);
-    saveUsers();
+    const result = await pool.query(
+      "DELETE FROM users WHERE id = $1 RETURNING id",
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
 
     res.json({ success: true, message: "User deleted successfully" });
   } catch (error) {
@@ -263,14 +350,37 @@ app.delete("/api/users/:id", (req, res) => {
 });
 
 // Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "API is running",
-    timestamp: new Date().toISOString(),
-    version: "1.0.0",
-    userCount: users.length,
-  });
+app.get("/api/health", async (req, res) => {
+  try {
+    let userCount = 0;
+    let databaseType = "PostgreSQL";
+
+    if (global.fallbackMode) {
+      userCount = global.users.length;
+      databaseType = "In-Memory (Fallback)";
+    } else {
+      const result = await pool.query("SELECT COUNT(*) FROM users");
+      userCount = parseInt(result.rows[0].count);
+    }
+
+    res.json({
+      success: true,
+      message: "API is running with database",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+      database: databaseType,
+      userCount: userCount,
+    });
+  } catch (error) {
+    res.json({
+      success: true,
+      message: "API is running (database connection issue)",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+      database: "Connection Error",
+      userCount: 0,
+    });
+  }
 });
 
 // Error handling middleware
@@ -289,15 +399,16 @@ app.listen(PORT, () => {
   console.log(`🚀 User Management API running on http://localhost:${PORT}`);
   console.log(`📊 API Documentation: http://localhost:${PORT}/api/users`);
   console.log(`🌐 Web Interface: http://localhost:${PORT}`);
-  console.log(`💾 Database: ${users.length} users loaded`);
+  console.log(`💾 Database: PostgreSQL (with fallback support)`);
 });
 
 // Graceful shutdown
 process.on("SIGINT", () => {
   console.log("\nShutting down server...");
-  saveUsers();
-  console.log("Data saved successfully.");
-  process.exit(0);
+  pool.end(() => {
+    console.log("Database connection pool closed.");
+    process.exit(0);
+  });
 });
 
 module.exports = app;

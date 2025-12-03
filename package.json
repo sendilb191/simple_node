@@ -1,7 +1,7 @@
 {
   "name": "user-management-api",
   "version": "1.0.0",
-  "description": "A simple Node.js API for user management with HTML interface and JSON database",
+  "description": "A simple Node.js API for user management with HTML interface and PostgreSQL database",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,14 +13,15 @@
     "api",
     "user-management",
     "express",
-    "json-database"
+    "postgresql"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "body-parser": "^1.20.2"
+    "body-parser": "^1.20.2",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

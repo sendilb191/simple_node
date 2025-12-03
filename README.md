@@ -1,11 +1,11 @@
 # 🚀 User Management API
 
-A modern, full-featured User Management API built with Node.js, Express, and SQLite. Features a beautiful web interface and is ready for deployment on various free hosting platforms.
+A modern, full-featured User Management API built with Node.js, Express, and PostgreSQL. Features a beautiful web interface and is ready for deployment on various free hosting platforms.
 
 ## ✨ Features
 
 - **RESTful API** - Complete CRUD operations for user management
-- **SQLite Database** - Lightweight, file-based database with no external dependencies
+- **PostgreSQL Database** - Robust, scalable database with full ACID compliance
 - **Modern Web Interface** - Beautiful, responsive HTML/CSS/JS frontend
 - **Real-time Updates** - Dynamic user interface with live data
 - **Input Validation** - Comprehensive server-side and client-side validation
@@ -13,11 +13,12 @@ A modern, full-featured User Management API built with Node.js, Express, and SQL
 - **Multiple Deployment Options** - Ready for Vercel, Render, Railway, Heroku
 - **Health Check Endpoint** - Built-in API monitoring
 - **Mobile Responsive** - Works perfectly on all devices
+- **Fallback Support** - Graceful fallback to in-memory storage if database unavailable
 
 ## 🛠️ Technology Stack
 
 - **Backend**: Node.js + Express.js
-- **Database**: SQLite3
+- **Database**: PostgreSQL (with in-memory fallback)
 - **Frontend**: HTML5 + CSS3 + Vanilla JavaScript
 - **Deployment**: Multiple platform support
 
@@ -27,13 +28,14 @@ A modern, full-featured User Management API built with Node.js, Express, and SQL
 
 - Node.js 18.0.0 or higher
 - npm (comes with Node.js)
+- PostgreSQL database (optional - uses in-memory fallback if unavailable)
 
 ### Installation
 
 1. **Clone the repository**
 
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/sendilb191/simple_node.git
    cd simple_node
    ```
 
@@ -43,7 +45,22 @@ A modern, full-featured User Management API built with Node.js, Express, and SQL
    npm install
    ```
 
-3. **Start the development server**
+3. **Configure database (optional)**
+
+   Set the DATABASE_URL environment variable:
+
+   ```bash
+   export DATABASE_URL="postgresql://username:password@localhost:5432/users_db"
+   ```
+
+   Or create a `.env` file:
+
+   ```env
+   DATABASE_URL=postgresql://username:password@localhost:5432/users_db
+   PORT=3000
+   ```
+
+4. **Start the development server**
 
    ```bash
    npm run dev
@@ -55,7 +72,7 @@ A modern, full-featured User Management API built with Node.js, Express, and SQL
    npm start
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to `http://localhost:3000`
 
 ## 📚 API Documentation
@@ -213,10 +230,15 @@ This application is configured for deployment on multiple free hosting platforms
 ```
 simple_node/
 ├── public/                 # Static files
-│   └── index.html         # Web interface
+│   ├── index.html         # Main web interface
+│   ├── css/               # Stylesheets
+│   │   ├── main.css      # Main styles
+│   │   └── api-testing.css # API testing styles
+│   └── js/                # JavaScript files
+│       ├── main.js       # Main app logic
+│       └── api-testing.js # API testing utilities
 ├── server.js              # Main server file
 ├── package.json           # Dependencies and scripts
-├── users.db              # SQLite database (auto-created)
 ├── .gitignore            # Git ignore rules
 ├── vercel.json           # Vercel config
 ├── render.yaml           # Render config
@@ -269,19 +291,24 @@ The application supports the following environment variables:
 
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment mode (development/production)
+- `DATABASE_URL` - PostgreSQL connection string (optional)
 
 Create a `.env` file for local development:
 
 ```env
 PORT=3000
 NODE_ENV=development
+DATABASE_URL=postgresql://username:password@localhost:5432/users_db
 ```
+
+**Note**: If DATABASE_URL is not provided, the application will use in-memory storage as a fallback.
 
 ### Database
 
-- Uses SQLite for simplicity and portability
-- Database file is created automatically as `users.db`
-- Includes sample data on first run
+- **Primary**: PostgreSQL for production-grade performance and scalability
+- **Fallback**: In-memory storage if PostgreSQL is unavailable
+- **Auto-initialization**: Creates users table and sample data automatically
+- **Environment-based**: Configure via DATABASE_URL environment variable
 
 ## 🤝 Contributing
 
@@ -304,6 +331,29 @@ If you encounter any issues:
 3. Verify Node.js version: `node --version` (should be 18+)
 4. Check if the port is available (default: 3000)
 
+## 🔧 Development Notes
+
+### Database Architecture
+
+- The application is designed to work with PostgreSQL as the primary database
+- Includes automatic fallback to in-memory storage if PostgreSQL is unavailable
+- Database schema is auto-created on first run
+- Sample users are inserted automatically for testing
+
+### API Design
+
+- Follows RESTful conventions
+- Returns consistent JSON responses
+- Includes proper HTTP status codes
+- Comprehensive error handling and validation
+
+### Deployment Features
+
+- Zero-config deployment on major platforms
+- Environment variable support for all configurations
+- Health check endpoints for monitoring
+- Production-ready logging and error handling
+
 ## 🎉 What's Next?
 
 Potential enhancements you could add:
@@ -318,6 +368,15 @@ Potential enhancements you could add:
 - API rate limiting
 - Logging and monitoring
 - Unit and integration tests
+- Docker containerization
+- API documentation with Swagger/OpenAPI
+
+## 📊 Repository Info
+
+- **Repository**: [simple_node](https://github.com/sendilb191/simple_node)
+- **Owner**: sendilb191
+- **Last Updated**: December 2025
+- **License**: ISC
 
 ---
 

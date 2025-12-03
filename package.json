@@ -1,7 +1,7 @@
 {
   "name": "user-management-api",
   "version": "1.0.0",
-  "description": "A simple Node.js API for user management with HTML interface and PostgreSQL database",
+  "description": "A modern User Management API built with Node.js, Express, and PostgreSQL. Features a beautiful web interface and is ready for deployment on various free hosting platforms.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

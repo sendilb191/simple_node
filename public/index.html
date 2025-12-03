@@ -98,13 +98,16 @@
           <p class="api-description">
             Test the API endpoints directly from this interface
           </p>
-          
+
           <div class="api-test-container">
             <!-- GET Users Test -->
             <div class="api-test-card">
               <h3 class="api-get-title">📋 GET /api/users</h3>
               <p>Retrieve all users from the database</p>
-              <button onclick="testGetUsers()" class="btn btn-api-get get-users-btn">
+              <button
+                onclick="testGetUsers()"
+                class="btn btn-api-get get-users-btn"
+              >
                 🚀 Test GET Users
               </button>
               <button onclick="testHealthCheck()" class="btn btn-api-health">
@@ -118,7 +121,12 @@
               <h3 class="api-post-title">➕ POST /api/users</h3>
               <p>Add a new user to the database</p>
               <div class="test-input-grid">
-                <input type="text" id="testUserName" placeholder="Test user name" class="test-input" />
+                <input
+                  type="text"
+                  id="testUserName"
+                  placeholder="Test user name"
+                  class="test-input"
+                />
                 <button onclick="testPostUser()" class="btn btn-api-post">
                   🚀 Test POST User
                 </button>
@@ -131,7 +139,12 @@
               <h3 class="api-delete-title">🗑️ DELETE /api/users/:id</h3>
               <p>Delete a user by ID</p>
               <div class="test-input-grid">
-                <input type="number" id="testDeleteId" placeholder="User ID to delete" class="test-input" />
+                <input
+                  type="number"
+                  id="testDeleteId"
+                  placeholder="User ID to delete"
+                  class="test-input"
+                />
                 <button onclick="testDeleteUser()" class="btn btn-api-delete">
                   🚀 Test DELETE User
                 </button>
@@ -150,12 +163,25 @@
                   <option value="PUT">PUT</option>
                   <option value="DELETE">DELETE</option>
                 </select>
-                <input type="text" id="testEndpoint" placeholder="/api/users" class="test-input" />
-                <button onclick="testCustomEndpoint()" class="btn btn-api-custom">
+                <input
+                  type="text"
+                  id="testEndpoint"
+                  placeholder="/api/users"
+                  class="test-input"
+                />
+                <button
+                  onclick="testCustomEndpoint()"
+                  class="btn btn-api-custom"
+                >
                   🚀 Test
                 </button>
               </div>
-              <textarea id="testPayload" placeholder="Request payload (JSON)" class="test-payload" rows="3"></textarea>
+              <textarea
+                id="testPayload"
+                placeholder="Request payload (JSON)"
+                class="test-payload"
+                rows="3"
+              ></textarea>
               <div id="customTestResult" class="test-result hidden"></div>
             </div>
           </div>

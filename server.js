@@ -31,8 +31,6 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        age INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -55,12 +53,6 @@ async function initializeDatabase() {
 
 // Initialize database on startup
 initializeDatabase();
-
-// Helper function to validate email
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
 
 // Routes
 
@@ -131,35 +123,20 @@ app.get("/api/users/:id", async (req, res) => {
 
 // Create new user
 app.post("/api/users", async (req, res) => {
-  const { name, email, age } = req.body;
+  const { name } = req.body;
 
   // Validation
-  if (!name || !email) {
-    res.status(400).json({ error: "Name and email are required" });
-    return;
-  }
-
-  if (!isValidEmail(email)) {
-    res.status(400).json({ error: "Invalid email format" });
+  if (!name || !name.trim()) {
+    res.status(400).json({ error: "Name is required" });
     return;
   }
 
   try {
     if (global.fallbackMode) {
       // Fallback to in-memory storage
-      const existingUser = global.users.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase()
-      );
-      if (existingUser) {
-        res.status(400).json({ error: "Email already exists" });
-        return;
-      }
-
       const newUser = {
         id: global.nextId++,
         name: name.trim(),
-        email: email.trim().toLowerCase(),
-        age: age ? parseInt(age) : null,
         created_at: new Date().toISOString(),
       };
 
@@ -173,8 +150,8 @@ app.post("/api/users", async (req, res) => {
     }
 
     const result = await pool.query(
-      "INSERT INTO users (name, email, age) VALUES ($1, $2, $3) RETURNING *",
-      [name.trim(), email.trim().toLowerCase(), age || null]
+      "INSERT INTO users (name) VALUES ($1) RETURNING *",
+      [name.trim()]
     );
 
     res.status(201).json({
@@ -184,28 +161,18 @@ app.post("/api/users", async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating user:", error);
-    if (error.code === "23505") {
-      // PostgreSQL unique constraint violation
-      res.status(400).json({ error: "Email already exists" });
-    } else {
-      res.status(500).json({ error: "Failed to create user" });
-    }
+    res.status(500).json({ error: "Failed to create user" });
   }
 });
 
 // Update user
 app.put("/api/users/:id", async (req, res) => {
   const userId = req.params.id;
-  const { name, email, age } = req.body;
+  const { name } = req.body;
 
   // Validation
-  if (!name || !email) {
-    res.status(400).json({ error: "Name and email are required" });
-    return;
-  }
-
-  if (!isValidEmail(email)) {
-    res.status(400).json({ error: "Invalid email format" });
+  if (!name || !name.trim()) {
+    res.status(400).json({ error: "Name is required" });
     return;
   }
 
@@ -220,21 +187,9 @@ app.put("/api/users/:id", async (req, res) => {
         return;
       }
 
-      const existingUser = global.users.find(
-        (u) =>
-          u.email.toLowerCase() === email.toLowerCase() &&
-          u.id !== parseInt(userId)
-      );
-      if (existingUser) {
-        res.status(400).json({ error: "Email already exists" });
-        return;
-      }
-
       global.users[userIndex] = {
         ...global.users[userIndex],
         name: name.trim(),
-        email: email.trim().toLowerCase(),
-        age: age ? parseInt(age) : null,
       };
 
       res.json({
@@ -246,8 +201,8 @@ app.put("/api/users/:id", async (req, res) => {
     }
 
     const result = await pool.query(
-      "UPDATE users SET name = $1, email = $2, age = $3 WHERE id = $4 RETURNING *",
-      [name.trim(), email.trim().toLowerCase(), age || null, userId]
+      "UPDATE users SET name = $1 WHERE id = $2 RETURNING *",
+      [name.trim(), userId]
     );
 
     if (result.rows.length === 0) {
@@ -262,12 +217,7 @@ app.put("/api/users/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating user:", error);
-    if (error.code === "23505") {
-      // PostgreSQL unique constraint violation
-      res.status(400).json({ error: "Email already exists" });
-    } else {
-      res.status(500).json({ error: "Failed to update user" });
-    }
+    res.status(500).json({ error: "Failed to update user" });
   }
 });
 

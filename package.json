@@ -1,7 +1,7 @@
 {
   "name": "user-management-api",
   "version": "1.0.0",
-  "description": "A simple Node.js API for user management with HTML interface and SQLite database",
+  "description": "A simple Node.js API for user management with HTML interface and JSON database",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,7 +13,7 @@
     "api",
     "user-management",
     "express",
-    "sqlite"
+    "json-database"
   ],
   "author": "",
   "license": "ISC",

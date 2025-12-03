@@ -37,27 +37,10 @@ async function initializeDatabase() {
       )
     `);
 
-    // Check if table is empty and insert sample data
+    // Just check user count for logging
     const result = await pool.query("SELECT COUNT(*) FROM users");
     const count = parseInt(result.rows[0].count);
-
-    if (count === 0) {
-      const sampleUsers = [
-        ["John Doe", "john@example.com", 30],
-        ["Jane Smith", "jane@example.com", 25],
-        ["Mike Johnson", "mike@example.com", 35],
-      ];
-
-      for (const user of sampleUsers) {
-        await pool.query(
-          "INSERT INTO users (name, email, age) VALUES ($1, $2, $3)",
-          user
-        );
-      }
-      console.log("Sample users inserted into PostgreSQL database");
-    } else {
-      console.log(`Loaded ${count} users from PostgreSQL database`);
-    }
+    console.log(`Database ready - ${count} users found`);
 
     console.log("PostgreSQL database initialized successfully");
   } catch (error) {
@@ -65,30 +48,8 @@ async function initializeDatabase() {
     // Fallback to in-memory storage if database connection fails
     console.log("Falling back to in-memory storage for development");
     global.fallbackMode = true;
-    global.users = [
-      {
-        id: 1,
-        name: "John Doe",
-        email: "john@example.com",
-        age: 30,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 2,
-        name: "Jane Smith",
-        email: "jane@example.com",
-        age: 25,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 3,
-        name: "Mike Johnson",
-        email: "mike@example.com",
-        age: 35,
-        created_at: new Date().toISOString(),
-      },
-    ];
-    global.nextId = 4;
+    global.users = []; // Start with empty users array
+    global.nextId = 1;
   }
 }
 

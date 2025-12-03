@@ -164,13 +164,11 @@ app.post("/api/users", async (req, res) => {
       };
 
       global.users.push(newUser);
-      res
-        .status(201)
-        .json({
-          success: true,
-          message: "User created successfully",
-          user: newUser,
-        });
+      res.status(201).json({
+        success: true,
+        message: "User created successfully",
+        user: newUser,
+      });
       return;
     }
 

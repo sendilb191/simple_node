@@ -1,0 +1,160 @@
+/* API Testing Interface Styles */
+
+.api-test-container {
+  display: grid;
+  gap: 20px;
+}
+
+.api-test-card {
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 20px;
+  background: #f8f9fa;
+}
+
+.api-test-card h3 {
+  margin-bottom: 10px;
+}
+
+.api-test-card h3[style*="color: #2563eb"] {
+  color: #2563eb !important;
+}
+
+.api-test-card h3[style*="color: #10b981"] {
+  color: #10b981 !important;
+}
+
+.api-test-card h3[style*="color: #ef4444"] {
+  color: #ef4444 !important;
+}
+
+.api-test-card h3[style*="color: #8b5cf6"] {
+  color: #8b5cf6 !important;
+}
+
+.api-test-card p {
+  margin-bottom: 15px;
+  color: #666;
+}
+
+.test-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.test-input-grid {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.test-custom-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.test-method-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.test-payload {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  resize: vertical;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+}
+
+.test-result {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 14px;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 15px;
+}
+
+.test-result.success {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.test-result.error {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.api-test-container .btn {
+  white-space: nowrap;
+}
+
+/* API Test Button Colors */
+.btn-api-get {
+  background: #10b981;
+}
+
+.btn-api-get:hover {
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+.btn-api-health {
+  background: #f59e0b;
+}
+
+.btn-api-health:hover {
+  box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+}
+
+.btn-api-post {
+  background: #10b981;
+}
+
+.btn-api-post:hover {
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+}
+
+.btn-api-delete {
+  background: #ef4444;
+}
+
+.btn-api-delete:hover {
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-api-custom {
+  background: #8b5cf6;
+}
+
+.btn-api-custom:hover {
+  box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+}
+
+@media (max-width: 768px) {
+  .test-custom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .test-input-grid {
+    flex-direction: column;
+  }
+
+  .test-input {
+    min-width: auto;
+  }
+}
